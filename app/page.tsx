@@ -1,22 +1,21 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
+
 export default function Home() {
   const [status, setStatus] = useState("loading...");
 
   useEffect(() => {
-    fetch("/api/health")
+    fetch("https://api.lab.sviuh.net/health")
       .then(res => res.json())
-      .then(data => setStatus(data.status))
+      .then(data => setStatus(JSON.stringify(data, null, 2)))
       .catch(() => setStatus("error"));
   }, []);
 
   return (
     <main>
       <h1>🚀 SVIUH Startup Lab</h1>
-      <h2>🚀 Frontend updated at {new Date().toISOString()}</h2>
-      <p>Status: {status}</p>
+      <pre>{status}</pre>
     </main>
   );
 }
