@@ -6,31 +6,78 @@ export default function Home() {
   const [idea, setIdea] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const [loadingStep, setLoadingStep] = useState<"idle" | "analyzing" | "designing" | "architecting" | "done">("idle");
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [design, setDesign] = useState<string | null>(null);
+  const [architecture, setArchitecture] = useState<string | null>(null);
+
   const handleCreateLab = async () => {
     setSubmitted(true);
 
-    const analyze = await fetch("/api/lab/analyze", {
+    // STEP 1 – Analyze
+    setLoadingStep("analyzing");
+    const analyzeRes = await fetch("/api/lab/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
-    }).then(res => res.json());
+    }).then((r) => r.json());
 
-    const design = await fetch("/api/lab/design", {
+    setAnalysis(analyzeRes.result);
+
+    // STEP 2 – UI Design
+    setLoadingStep("designing");
+    const designRes = await fetch("/api/lab/design", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
-    }).then(res => res.json());
+    }).then((r) => r.json());
 
-    const architecture = await fetch("/api/lab/architecture", {
+    setDesign(designRes.result);
+
+    // STEP 3 – Architecture
+    setLoadingStep("architecting");
+    const archRes = await fetch("/api/lab/architecture", {
       method: "POST",
-    }).then(res => res.json());
+    }).then((r) => r.json());
+
+    setArchitecture(archRes.result);
+
+    setLoadingStep("done");
 
     console.log("LAB RESULT:", {
-      analyze,
-      design,
-      architecture,
+      analyzeRes,
+      designRes,
+      archRes,
     });
   };
+
+  function Section({
+    title,
+    loading,
+    content,
+  }: {
+    title: string;
+    loading: boolean;
+    content: string | null;
+  }) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <h3 className="text-xl font-semibold mb-3">{title}</h3>
+
+        {loading && (
+          <p className="animate-pulse text-indigo-300">
+            ⏳ AI đang xử lý...
+          </p>
+        )}
+
+        {!loading && content && (
+          <pre className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+            {content}
+          </pre>
+        )}
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
@@ -62,6 +109,39 @@ export default function Home() {
           >
             🚀 Tạo Lab cho ý tưởng này
           </button>
+
+          {submitted && (
+            <div className="mt-12 space-y-6">
+              {/* STEP 1 */}
+              <Section
+                title="🔍 Phân tích ý tưởng"
+                loading={loadingStep === "analyzing"}
+                content={analysis}
+              />
+
+              {/* STEP 2 */}
+              <Section
+                title="🎨 Gợi ý giao diện Web / App"
+                loading={loadingStep === "designing"}
+                content={design}
+              />
+
+              {/* STEP 3 */}
+              <Section
+                title="🏗️ Kiến trúc & Công nghệ đề xuất"
+                loading={loadingStep === "architecting"}
+                content={architecture}
+              />
+
+              {loadingStep === "done" && (
+                <div className="pt-6">
+                  <button className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold">
+                    👉 Tạo trang Lab cho ý tưởng này
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <p className="mt-3 text-sm text-slate-400">
             Không cần đăng nhập · Chỉ để khám phá
