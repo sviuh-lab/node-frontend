@@ -14,7 +14,8 @@ export default function Home() {
 
   return (
     <main>
-      <h1>🚀 SVIUH Startup Lab</h1>
+      <h1>🚀 SVIUH Startup Lab – LOCAL PUSH TEST</h1>
+      <p>Updated at {new Date().toISOString()}</p>
       <pre>{status}</pre>
     </main>
   );
