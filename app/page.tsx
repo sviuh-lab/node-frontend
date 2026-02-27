@@ -1,22 +1,50 @@
-async function getDemo() {
-  const res = await fetch("https://api.lab.sviuh.net/demo", {
-    cache: "no-store",
-  });
-  return res.json();
-}
+"use client";
 
-export default async function Home() {
-  const demo = await getDemo();
+import { useEffect, useState } from "react";
+
+export default function Home() {
+  const [status, setStatus] = useState("Checking backend...");
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("https://api.lab.sviuh.net/health")
+      .then((res) => res.json())
+      .then((json) => {
+        setStatus("Backend connected ✅");
+        setData(json);
+      })
+      .catch(() => {
+        setStatus("Backend unreachable ❌");
+      });
+  }, []);
 
   return (
-    <main className="p-10">
-      <h1 className="text-3xl font-bold">SVIUH Startup Lab</h1>
+    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>🚀 SVIUH Startup Lab</h1>
 
-      <p className="mt-4">{demo.message}</p>
+      <p>
+        <strong>Status:</strong> {status}
+      </p>
 
-      <pre className="mt-6 bg-gray-100 p-4 rounded">
-        {JSON.stringify(demo, null, 2)}
-      </pre>
+      {data && (
+        <pre
+          style={{
+            background: "#111",
+            color: "#0f0",
+            padding: "1rem",
+            borderRadius: "8px",
+          }}
+        >
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      )}
+
+      <hr style={{ margin: "2rem 0" }} />
+
+      <p>
+        Đây là frontend demo cho các nhóm sinh viên kết nối tới nền tảng
+        <strong> OpenLab Platform</strong>.
+      </p>
     </main>
   );
 }
