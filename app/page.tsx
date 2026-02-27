@@ -6,13 +6,39 @@ export default function Home() {
   const [idea, setIdea] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const handleCreateLab = async () => {
+    setSubmitted(true);
+
+    const analyze = await fetch("/api/lab/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea }),
+    }).then(res => res.json());
+
+    const design = await fetch("/api/lab/design", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea }),
+    }).then(res => res.json());
+
+    const architecture = await fetch("/api/lab/architecture", {
+      method: "POST",
+    }).then(res => res.json());
+
+    console.log("LAB RESULT:", {
+      analyze,
+      design,
+      architecture,
+    });
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
       {/* HERO */}
       <section className="max-w-6xl mx-auto px-6 pt-28 pb-24 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+        <h2 className="text-4xl md:text-6xl font-bold tracking-tight">
           Biến ý tưởng thành ứng dụng
-        </h1>
+        </h2>
         <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
           Lab đổi mới sáng tạo dành cho sinh viên.
           <br />
@@ -30,7 +56,7 @@ export default function Home() {
           />
 
           <button
-            onClick={() => setSubmitted(true)}
+            onClick={handleCreateLab}
             disabled={!idea.trim()}
             className="mt-6 w-full md:w-auto px-10 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-semibold text-lg disabled:opacity-50"
           >
