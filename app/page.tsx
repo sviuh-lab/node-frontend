@@ -1,9 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
-
 import { useEffect, useState } from "react";
-
 export default function Home() {
   const [status, setStatus] = useState("loading...");
 
@@ -17,6 +15,7 @@ export default function Home() {
   return (
     <main>
       <h1>🚀 SVIUH Startup Lab</h1>
+      <h2>🚀 Frontend updated at {new Date().toISOString()}</h2>
       <p>Status: {status}</p>
     </main>
   );
