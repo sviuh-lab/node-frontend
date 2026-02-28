@@ -1,15 +1,27 @@
+//page.tsx
 "use client";
 
 import {useState } from "react";
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from "remark-gfm";
+import remarkBreaks from 'remark-breaks';
+
+import { IdeaPreview, IdeaPreviewSection } from "./IdeaPreviewSection";
 
 export default function Home() {
   const [idea, setIdea] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const [result, setResult] = useState<{
+    analyze?: string;
+    design?: string;
+    architecture?: string;
+  }>({});
+
+  const [preview, setPreview] = useState<IdeaPreview | null>(null);
+
   const [loadingStep, setLoadingStep] = useState<"idle" | "analyzing" | "designing" | "architecting" | "done">("idle");
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [design, setDesign] = useState<string | null>(null);
-  const [architecture, setArchitecture] = useState<string | null>(null);
 
   const handleCreateLab = async () => {
     setSubmitted(true);
@@ -18,29 +30,47 @@ export default function Home() {
     setLoadingStep("analyzing");
     const analyzeRes = await fetch("/api/lab/analyze", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
     }).then((r) => r.json());
 
-    setAnalysis(analyzeRes.result);
+    setResult(prev => ({
+      ...prev,
+      analyze: analyzeRes.content,
+    }));
+
+    setPreview(analyzeRes.preview as IdeaPreview);
 
     // STEP 2 – UI Design
     setLoadingStep("designing");
+
     const designRes = await fetch("/api/lab/design", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea }),
+      body: JSON.stringify({
+        idea,
+        analysis: analyzeRes.content,
+       }),
     }).then((r) => r.json());
 
-    setDesign(designRes.result);
+    setResult(prev => ({
+      ...prev,
+      design: designRes.content,
+    }));
 
     // STEP 3 – Architecture
     setLoadingStep("architecting");
     const archRes = await fetch("/api/lab/architecture", {
       method: "POST",
+      body: JSON.stringify({
+      idea,
+      analysis: analyzeRes.content,
+      design: designRes.content,
+    }),
     }).then((r) => r.json());
 
-    setArchitecture(archRes.result);
+    setResult(prev => ({
+      ...prev,
+      architecture: archRes.content,
+    }));
 
     setLoadingStep("done");
 
@@ -49,7 +79,15 @@ export default function Home() {
       designRes,
       archRes,
     });
+
   };
+
+  function stripMarkdownFence(text: string) {
+    return text
+      .replace(/^```(?:markdown)?\s*/i, "")
+      .replace(/```$/, "")
+      .trim();
+  }
 
   function Section({
     title,
@@ -58,23 +96,25 @@ export default function Home() {
   }: {
     title: string;
     loading: boolean;
-    content: string | null;
+    content?: string | undefined;
   }) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
         <h3 className="text-xl font-semibold mb-3">{title}</h3>
-
-        {loading && (
-          <p className="animate-pulse text-indigo-300">
-            ⏳ AI đang xử lý...
-          </p>
-        )}
-
-        {!loading && content && (
-          <pre className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
-            {content}
-          </pre>
-        )}
+        {content ? (
+          <div className="prose prose-invert prose-slate max-w-none 
+            prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl
+            prose-p:text-slate-300 prose-strong:text-white
+            prose-li:text-slate-300"  style={{textAlign: "left"}}>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+              {stripMarkdownFence(content)}
+            </ReactMarkdown>
+          </div>
+        ) : loading ? (
+            <p className="animate-pulse text-indigo-300">
+              ⏳ AI đang xử lý...
+            </p>
+        ) : null}
       </div>
     );
   }
@@ -89,7 +129,7 @@ export default function Home() {
         <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
           Lab đổi mới sáng tạo dành cho sinh viên.
           <br />
-          Nơi bạn thử – sai – học – và deploy thật. Version 001
+          Nơi bạn thử – sai – học – và deploy thật. Version 002
         </p>
 
         {/* IDEA INPUT */}
@@ -107,7 +147,7 @@ export default function Home() {
             disabled={!idea.trim()}
             className="mt-6 w-full md:w-auto px-10 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-semibold text-lg disabled:opacity-50"
           >
-            🚀 Tạo Lab cho ý tưởng này
+            🚀 Tạo thiết kế cho ý tưởng này
           </button>
 
           {submitted && (
@@ -116,21 +156,21 @@ export default function Home() {
               <Section
                 title="🔍 Phân tích ý tưởng"
                 loading={loadingStep === "analyzing"}
-                content={analysis}
+                content={result.analyze}
               />
 
               {/* STEP 2 */}
               <Section
                 title="🎨 Gợi ý giao diện Web / App"
                 loading={loadingStep === "designing"}
-                content={design}
+                content={result.design}
               />
 
               {/* STEP 3 */}
               <Section
                 title="🏗️ Kiến trúc & Công nghệ đề xuất"
                 loading={loadingStep === "architecting"}
-                content={architecture}
+                content={result.architecture}
               />
 
               {loadingStep === "done" && (
@@ -154,18 +194,12 @@ export default function Home() {
         <section className="max-w-6xl mx-auto px-6 pb-32">
           <div className="grid md:grid-cols-2 gap-8">
             {/* LEFT */}
-            <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-              <h3 className="text-xl font-semibold mb-4">💡 Ý tưởng của bạn</h3>
-              <p className="text-slate-300 italic">"{idea}"</p>
+            <div className="space-y-6">
+              {preview && <IdeaPreviewSection preview={preview} />}
 
-              <div className="mt-6">
-                <h4 className="font-semibold mb-2">🧠 AI hiểu ý tưởng này là</h4>
-                <ul className="space-y-1 text-slate-300">
-                  <li>• Loại: Web / App</li>
-                  <li>• Đối tượng: Sinh viên</li>
-                  <li>• Mục tiêu: Giải quyết một vấn đề thực tế</li>
-                </ul>
-              </div>
+              {/* sau này có thể thêm */}
+              {/* <IdeaScore /> */}
+              {/* <IdeaTags /> */}
             </div>
 
             {/* RIGHT */}
