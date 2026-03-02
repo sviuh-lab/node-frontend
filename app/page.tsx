@@ -264,7 +264,7 @@ export default function Home() {
                     <label className="text-sm text-slate-400">URL trang Lab</label>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="text-slate-400 text-sm">lab.sviuh.net/</span>
+                      <span className="text-slate-400 text-sm">lab.sviuh.net/p/</span>
 
                       <input
                         value={slug}
