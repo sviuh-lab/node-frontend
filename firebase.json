@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "public": "public",
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "geton-main",
+          "region": "asia-southeast1"
+        }
+      }
+    ]
+  }
+}
