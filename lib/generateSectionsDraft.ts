@@ -96,11 +96,10 @@ export function generateSectionsDraft(
     case "showcase":
         return [
         { type: "hero", enabled: true, source: "preset" },
-        { type: "about", enabled: true, source: "preset" },
-        { type:"works", enabled:true, source:"preset"},
-        { type:"testimonials", enabled:true, source:"ai"},
-        { type:"contact", enabled:true, source:"preset"},
-        ];
+        { type: "highlights", enabled: true, source: "preset" },
+        { type: "gallery", enabled: true, source: "preset" },
+        { type: "cta", enabled: true, source: "preset" },
+      ];
 
     case "marketplace":
         return [
@@ -142,13 +141,18 @@ export function generateSectionsDraft(
       ];
 
     case "digitalService":
-    case "gov":
       return [
         { type: "hero", enabled: true, source: "preset" },
-        { type: "services", enabled: true, source: "preset" },
-        { type: "process", enabled: true, source: "preset" },
-        { type: "compliance", enabled: true, source: "preset" },
+        { type: "features", enabled: true, source: "preset" },
+        { type: "contact", enabled: true, source: "preset" },
       ];
+
+    case "gov":
+        return [
+        { type: "hero", enabled: true, source: "preset" },
+        { type: "features", enabled: true, source: "preset" },
+        { type: "contact", enabled: true, source: "preset" },
+        ];
 
     case "admin":
         return [
