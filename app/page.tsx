@@ -14,7 +14,7 @@ import { content } from "@/tailwind.config";
 import { useRouter } from "next/navigation";
 import { Project, projects } from "@/lib/project";
 import { ecommerceTemplate } from "./templates/presets";
-import { initProjectTemplate } from "@/lib/initProjectTemplate";
+//import { initProjectTemplate } from "@/lib/initProjectTemplate";
 
 export default function Home() {
   const [idea, setIdea] = useState("");
@@ -196,7 +196,7 @@ export default function Home() {
               type="text"
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Bạn muốn tạo web / app gì? Hãy mô tả ý tưởng của bạn thật ngắn gọn và rõ ràng..."
+              placeholder="Bạn muốn tạo web / app hay sản phẩm số gì? Hãy mô tả ý tưởng của bạn"
               className="w-full px-6 py-4 rounded-xl bg-slate-900/70 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg"
             />
 
