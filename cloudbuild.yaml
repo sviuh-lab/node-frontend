@@ -1,40 +1,45 @@
 steps:
-# Bước 1: Build Docker image từ Dockerfile của bạn
-- name: 'gcr.io/cloud-builders/docker'
+# Bước 1: Build image bằng Cloud Native Buildpacks (giống cấu hình Inline của bạn)
+- name: 'gcr.io/k8s-skaffold/pack'
+  id: Buildpack
+  entrypoint: pack
   args:
-  - 'build'
-  - '-t'
-  - 'asia-southeast1-docker.pkg.dev/sviuh-startup-lab/cloud-run/frontend-node:$COMMIT_SHA' # Thay thế bằng đường dẫn Artifact Registry của bạn
-  - '-f'
-  - 'Dockerfile' # Đảm bảo Dockerfile nằm ở thư mục gốc hoặc chỉ định đường dẫn chính xác
-  - '.'
+    - build
+    - 'asia-southeast1-docker.pkg.dev/getonlab/cloud-run-source-deploy/geton-main:$COMMIT_SHA' # Sử dụng thông tin từ substitutions
+    - '--builder=gcr.io/buildpacks/builder:latest'
+    - '--network=cloudbuild'
+    - '--path=.'
 
-# Bước 2: Push Docker image lên Artifact Registry
+# Bước 2: Push image lên Artifact Registry
 - name: 'gcr.io/cloud-builders/docker'
+  id: Push
   args:
-  - 'push'
-  - 'asia-southeast1-docker.pkg.dev/sviuh-startup-lab/cloud-run/frontend-node:$COMMIT_SHA' # Thay thế bằng đường dẫn Artifact Registry của bạn
+    - push
+    - 'asia-southeast1-docker.pkg.dev/getonlab/cloud-run-source-deploy/geton-main:$COMMIT_SHA'
 
-# Bước 3: Triển khai ảnh container lên Cloud Run
+# Bước 3: Deploy image lên Cloud Run
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: Deploy
   entrypoint: gcloud
   args:
-  - 'run'
-  - 'deploy'
-  - 'startup-lab-web' # Tên dịch vụ Cloud Run của bạn
-  - '--image'
-  - 'asia-southeast1-docker.pkg.dev/sviuh-startup-lab/cloud-run/frontend-node:$COMMIT_SHA' # Đường dẫn ảnh đã push
-  - '--region'
-  - 'asia-southeast1' # Khu vực Cloud Run của bạn
-  - '--platform'
-  - 'managed'
-  - '--allow-unauthenticated' # Hoặc cấu hình xác thực phù hợp với bạn
-  # Thêm các tham số cấu hình khác cho Cloud Run nếu cần, ví dụ:
-  # - '--cpu=1'
-  # - '--memory=512Mi'
-  # - '--min-instances=0'
-  # - '--max-instances=2'
-  # - '--set-env-vars=NODE_ENV=production'
+    - 'run'
+    - 'deploy'
+    - 'geton-main' # Tên service
+    - '--platform=managed'
+    - '--image=asia-southeast1-docker.pkg.dev/getonlab/cloud-run-source-deploy/geton-main:$COMMIT_SHA'
+    - '--region=asia-southeast1'
+    - '--allow-unauthenticated'
+    - '--quiet'
+
+# Bước 4: Deploy lên Firebase Hosting (tích hợp từ yêu cầu trước)
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'firebase'
+  args:
+    - 'deploy'
+    - '--only'
+    - 'hosting'
+    - '--project'
+    - 'getonlab' # Project ID của bạn
 
 images:
-- 'asia-southeast1-docker.pkg.dev/sviuh-startup-lab/cloud-run/frontend-node:$COMMIT_SHA' # Đường dẫn ảnh đã push
+- 'asia-southeast1-docker.pkg.dev/getonlab/cloud-run-source-deploy/geton-main:$COMMIT_SHA'

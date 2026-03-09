@@ -211,7 +211,7 @@ export default function Home() {
         <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
           Lab đổi mới sáng tạo dành cho sinh viên.
           <br />
-          Nơi bạn thử – sai – học – và deploy thật. Version 002
+          Nơi bạn thử – sai – học – và deploy thật. Version 003
         </p>
 
         {/* IDEA INPUT */}
