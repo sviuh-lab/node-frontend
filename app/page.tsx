@@ -53,9 +53,12 @@ export default function Home() {
     }).then((r) => r.json());
 
     setResult(prev => ({ ...prev, analysis: analyzeRes.content,}));
-    setPreview(prev => ({ ...prev, analysis: analyzeRes.preview.analysis as AnalysisPreview }));
-    setPreview(prev => ({ ...prev, design: analyzeRes.preview.design as DesignPreview  }));
-    setPreview(prev => ({ ...prev, architecture: analyzeRes.preview.architecture as ArchitecturePreview }));    
+    setPreview(prev => ({
+      ...prev,
+      analysis: analyzeRes.preview.analysis as AnalysisPreview,
+      design: analyzeRes.preview.design as DesignPreview,
+      architecture: analyzeRes.preview.architecture as ArchitecturePreview,
+    }));
     setMode(analyzeRes.mode);
     
     setLoadingStep("done");
