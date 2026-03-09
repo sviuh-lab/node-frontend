@@ -1,4 +1,4 @@
-// p/[slug]/WebsiteConfiguration.tsx
+// app/components/WebsiteConfiguration.tsx
 "use client";
 
 import { TemplateMode, templateModes } from "@/lib/template";
@@ -30,7 +30,7 @@ export function WebsiteConfiguration({ project, onChange }: Props) {
   }, []); // Chạy một lần duy nhất khi component mount
 
   return (
-    <section className="mt-12 p-6 rounded-2xl border border-slate-700 bg-slate-900">
+    <section className="mt-12 p-6 rounded-2xl border border-slate-700 bg-slate-900 max-w-2xl mx-auto">
       <h2 className="text-xl font-semibold text-white mb-6">
         B. Website Configuration
       </h2>

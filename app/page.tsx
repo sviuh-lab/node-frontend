@@ -12,7 +12,12 @@ import { AnalysisPreview, AnalysisPreviewSection,
   ArchitecturePreview, ArchitecturePreviewSection} from "./previewSections";
 import { useRouter } from "next/navigation";
 import { Project } from "@/lib/project";
-import { TemplateMode } from "@/lib/template";
+import { TemplateMode, templateModes } from "@/lib/template";
+import { getOptionsForMode } from "@/lib/modeConfig";
+import { getPresetByMode } from "@/lib/getPreset";
+import { generateSectionsDraft } from "@/lib/generateSectionsDraft";
+import { WebsiteConfiguration } from "@/app/components/WebsiteConfiguration";
+import { Website } from "@/lib/website";
 
 export default function Home() {
   const [idea, setIdea] = useState("");
@@ -32,6 +37,12 @@ export default function Home() {
 
   const [loadingStep, setLoadingStep] = useState<"idle" | "analyzing" | "designing" | "architecting" | "done">("idle");
   const [mode, setMode] = useState<TemplateMode>();
+  const [projectOptions, setProjectOptions] = useState<{
+    goals: string[];
+    audience: string[];
+    tones: string[];
+  }>({ goals: [], audience: [], tones: [] });
+  const [config, setConfig] = useState<Partial<Project>>({});
 
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
@@ -41,6 +52,19 @@ export default function Home() {
       setSlug(slugify(preview.analysis.brand));
     }
   }, [preview.analysis, slugEdited]);
+
+  useEffect(() => {
+    if (mode) {
+      const options = getOptionsForMode(mode);
+      setProjectOptions(options);
+      setConfig(prev => ({
+        ...prev,
+        mode: mode,
+        template: getPresetByMode(mode),
+        sectionsDraft: generateSectionsDraft(mode),
+      }));
+    }
+  }, [mode]);
 
   const handleAnalyzeLab = async () => {
     setSubmitted(true);
@@ -52,14 +76,14 @@ export default function Home() {
       body: JSON.stringify({ idea }),
     }).then((r) => r.json());
 
-    setResult(prev => ({ ...prev, analysis: analyzeRes.content,}));
+    setResult(prev => ({ ...prev, analysis: analyzeRes?.content,}));
     setPreview(prev => ({
       ...prev,
-      analysis: analyzeRes.preview.analysis as AnalysisPreview,
-      design: analyzeRes.preview.design as DesignPreview,
-      architecture: analyzeRes.preview.architecture as ArchitecturePreview,
+      analysis: analyzeRes?.preview?.analysis as AnalysisPreview,
+      design: analyzeRes?.preview?.design as DesignPreview,
+      architecture: analyzeRes?.preview?.architecture as ArchitecturePreview,
     }));
-    setMode(analyzeRes.mode);
+    setMode(analyzeRes?.mode);
     
     setLoadingStep("done");
 
@@ -123,35 +147,67 @@ export default function Home() {
 
   const router = useRouter();
 
-  const handleCreateLab = () => {
-    if (!slug || !preview.analysis) return;
+  const handleCreateProject = async () => {
+    if (!slug || !preview.analysis || !mode) return;
+
+    const template = getPresetByMode(mode);
+    const sectionsDraft = generateSectionsDraft(mode);
 
     let project: Project = {
+      id: crypto.randomUUID(), // Thêm ID duy nhất cho project
       idea: idea,
       slug,
       title: preview.analysis.title,
       brand: preview.analysis.brand,
       mode: mode,
 
+      // Lấy cấu hình từ state `config`
+      ...config,
+      
       preview,
       content: result,
+      template,
+      sectionsDraft,
     };
-
-    //project = initProjectTemplate(project, "ecommerce");
-    // sau này mode có thể do AI hoặc user chọn
     
     localStorage.setItem(`lab:${slug}`, JSON.stringify(project));
 
-    router.push(`/p/${slug}`);
+    // Tạo đối tượng website để trang /web/[slug] có thể render
+    const website: Website = {
+      slug: slug,
+      projectId: project.id, // Giả sử project có id, nếu không có thể bỏ qua
+      template: template,
+      status: "generated",
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(`web:${slug}`, JSON.stringify(website));
+
+    router.push(`/web/${slug}`); // Chuyển thẳng đến trang tạo web
   };
+
+  function handleConfigChange(patch: Partial<Project>) {
+    setConfig(prev => ({ ...prev, ...patch }));
+  }
+
+  // Tạo một đối tượng project tạm để truyền cho WebsiteConfiguration
+  const projectForConfig: Partial<Project> = {
+    slug,
+    mode,
+    preview,
+    ...config,
+  };
+
+
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
       {/* HERO */}
       <section className="max-w-6xl mx-auto px-6 pt-28 pb-24 text-center">
-        <h2 className="text-4xl md:text-6xl font-bold tracking-tight">
+        <h3 className="text-4xl md:text-4xl font-bold tracking-tight">
           Từ Ý tưởng đến Sản phẩm số
-        </h2>
+        </h3>
         <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
           Lab đổi mới sáng tạo dành cho sinh viên.
           <br />
@@ -232,16 +288,16 @@ export default function Home() {
 
               {loadingStep === "done" && (
                 <div className="mt-20 text-center">
-                  <h3 className="text-2xl font-bold">
-                    Mỗi ý tưởng đều xứng đáng được thử
+                  <h3 className="text-2xl font-bold mb-8">
+                    Phân tích hoàn tất! Giờ hãy tinh chỉnh dự án của bạn.
                   </h3>
 
                   {/* SLUG */}
-                  <div className="bg-slate-900/70 border border-slate-700 rounded-xl p-4">
+                  <div className="bg-slate-900/70 border border-slate-700 rounded-xl p-4 text-left max-w-2xl mx-auto space-y-6">
                     <label className="text-sm text-slate-400">URL trang Lab</label>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="text-slate-400 text-sm">lab.sviuh.net/p/</span>
+                      <span className="text-slate-400 text-sm">/web/</span>
 
                       <input
                         value={slug}
@@ -256,11 +312,15 @@ export default function Home() {
                     <p className="mt-1 text-xs text-slate-500">
                       Có thể chỉnh, sẽ được khóa sau khi tạo trang Lab
                     </p>
+
                   </div>
+
+                  <WebsiteConfiguration project={projectForConfig} onChange={handleConfigChange} />
+
                   {/* CREATE LAB BUTTON */}
                   <div className="mt-6 flex justify-center gap-4 flex-wrap">
                     <button
-                      onClick={handleCreateLab}
+                      onClick={handleCreateProject}
                       disabled={loadingStep !== "done"}
                       className={`
                         px-6 py-3 rounded-xl font-semibold transition
@@ -270,7 +330,7 @@ export default function Home() {
                             : "bg-slate-700 cursor-not-allowed opacity-50"
                         }
                       `}
-                    >
+                    > 
                       🚀 Tạo dự án
                     </button>
 
@@ -285,7 +345,7 @@ export default function Home() {
                     </button>
                   </div>
                   <p className="mt-3 text-sm text-slate-400">
-                    Lưu lại & triển khai thật cho dự án của bạn!
+                    Bước tiếp theo: Thiết kế các thành phần và triển khai sản phẩm.
                   </p>
                 </div>
               )}
@@ -413,33 +473,6 @@ export default function Home() {
                 </>
               )}
           </div>
-
-          {/* CTA */}
-          {loadingStep === "done" && (
-            <div className="mt-20 text-center">
-              <h3 className="text-2xl font-bold">
-                Mỗi ý tưởng đều xứng đáng được thử
-              </h3>
-              <div className="mt-6 flex justify-center gap-4 flex-wrap">
-                <button className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold">
-                  🚀 Tạo dự án
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIdea("");
-                    setSubmitted(false);
-                  }}
-                  className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700"
-                >
-                  Thử ý tưởng khác
-                </button>
-              </div>
-              <p className="mt-3 text-sm text-slate-400">
-                Lưu lại & triển khai thật cho dự án của bạn!
-              </p>
-            </div>
-          )}
 
         </section>
         
